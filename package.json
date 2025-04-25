@@ -1,0 +1,11 @@
+{
+  "name": "smart-hat-control-panel",
+  "version": "1.0.0",
+  "description": "Static frontend for Smart Hat system",
+  "scripts": {
+    "start": "echo 'No server needed; this is a static site.'"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

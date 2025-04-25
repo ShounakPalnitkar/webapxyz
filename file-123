@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Hat Secure Control Panel</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 400px;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border 0.3s;
+        }
+        
+        input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .error-message {
+            color: #e74c3c;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        
+        .app-container {
+            display: none;
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .logout-btn {
+            background-color: #e74c3c;
+            width: auto;
+            padding: 8px 15px;
+        }
+        
+        .logout-btn:hover {
+            background-color: #c0392b;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .online {
+            background-color: #2ecc71;
+        }
+        
+        .offline {
+            background-color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Form -->
+    <div id="login-container" class="container">
+        <h1>Smart Hat Control Panel</h1>
+        <div class="input-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" placeholder="Enter your username">
+        </div>
+        <div class="input-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Enter your password">
+        </div>
+        <button id="login-btn">Login</button>
+        <div id="error-message" class="error-message"></div>
+    </div>
+    
+    <!-- Main App (hidden until login) -->
+    <div id="app-container" class="app-container">
+        <div class="header">
+            <h1>Smart Hat Control Panel</h1>
+            <button id="logout-btn" class="logout-btn">Logout</button>
+        </div>
+        
+        <div class="dashboard">
+            <div class="card">
+                <h2>System Status</h2>
+                <p><span id="status-indicator" class="status-indicator offline"></span> <span id="connection-status">Disconnected</span></p>
+                <p>Battery: <span id="battery-level">--</span>%</p>
+                <p>CPU Temp: <span id="cpu-temp">--</span>°C</p>
+            </div>
+            
+            <div class="card">
+                <h2>Detection Controls</h2>
+                <button id="start-detection">Start Detection</button>
+                <button id="stop-detection">Stop Detection</button>
+                <div style="margin-top: 15px;">
+                    <label>
+                        <input type="checkbox" id="voice-alerts"> Voice Alerts
+                    </label>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Video Feed</h2>
+                <img id="video-feed" src="" style="max-width: 100%; border-radius: 4px; display: none;">
+                <button id="show-video">Show Video Feed</button>
+                <button id="hide-video" style="display: none;">Hide Video Feed</button>
+            </div>
+            
+            <div class="card">
+                <h2>System Actions</h2>
+                <button id="download-logs">Download Logs</button>
+                <button id="shutdown-system" style="background-color: #e74c3c;">Shutdown System</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const VALID_USERS = {
+            "admin": "smarthat123",
+            "user": "password123",
+            "ada": "de2023"
+        };
+        
+        // DOM Elements
+        const loginContainer = document.getElementById('login-container');
+        const appContainer = document.getElementById('app-container');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const loginBtn = document.getElementById('login-btn');
+        const errorMessage = document.getElementById('error-message');
+        const logoutBtn = document.getElementById('logout-btn');
+        const statusIndicator = document.getElementById('status-indicator');
+        const connectionStatus = document.getElementById('connection-status');
+        const batteryLevel = document.getElementById('battery-level');
+        const cpuTemp = document.getElementById('cpu-temp');
+        const startDetectionBtn = document.getElementById('start-detection');
+        const stopDetectionBtn = document.getElementById('stop-detection');
+        const voiceAlertsCheckbox = document.getElementById('voice-alerts');
+        const videoFeed = document.getElementById('video-feed');
+        const showVideoBtn = document.getElementById('show-video');
+        const hideVideoBtn = document.getElementById('hide-video');
+        const downloadLogsBtn = document.getElementById('download-logs');
+        const shutdownSystemBtn = document.getElementById('shutdown-system');
+        
+        // State
+        let isAuthenticated = false;
+        let authToken = null;
+        let videoFeedInterval = null;
+        let statusUpdateInterval = null;
+        
+        // Event Listeners
+        loginBtn.addEventListener('click', handleLogin);
+        logoutBtn.addEventListener('click', handleLogout);
+        startDetectionBtn.addEventListener('click', startDetection);
+        stopDetectionBtn.addEventListener('click', stopDetection);
+        voiceAlertsCheckbox.addEventListener('change', toggleVoiceAlerts);
+        showVideoBtn.addEventListener('click', showVideoFeed);
+        hideVideoBtn.addEventListener('click', hideVideoFeed);
+        downloadLogsBtn.addEventListener('click', downloadLogs);
+        shutdownSystemBtn.addEventListener('click', shutdownSystem);
+        
+        // Check for existing session on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedToken = localStorage.getItem('smartHatAuthToken');
+            if (savedToken) {
+                // In a real app, you would validate the token with the server
+                authToken = savedToken;
+                switchToAppView();
+                startStatusUpdates();
+            }
+        });
+        
+        // Functions
+        function handleLogin() {
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+            
+            if (!username || !password) {
+                showError('Please enter both username and password');
+                return;
+            }
+            
+            if (VALID_USERS[username] && VALID_USERS[username] === password) {
+                // Successful login
+                authToken = generateToken(username);
+                localStorage.setItem('smartHatAuthToken', authToken);
+                switchToAppView();
+                startStatusUpdates();
+            } else {
+                showError('Invalid username or password');
+            }
+        }
+        
+        function handleLogout() {
+            localStorage.removeItem('smartHatAuthToken');
+            authToken = null;
+            switchToLoginView();
+            stopStatusUpdates();
+        }
+        
+        function switchToAppView() {
+            loginContainer.style.display = 'none';
+            appContainer.style.display = 'block';
+            isAuthenticated = true;
+        }
+        
+        function switchToLoginView() {
+            loginContainer.style.display = 'block';
+            appContainer.style.display = 'none';
+            isAuthenticated = false;
+            hideVideoFeed(); // Ensure video feed is stopped
+        }
+        
+        function showError(message) {
+            errorMessage.textContent = message;
+            setTimeout(() => {
+                errorMessage.textContent = '';
+            }, 3000);
+        }
+        
+        function generateToken(username) {
+            // In a real app, this would be generated by the server
+            return btoa(`${username}:${Date.now()}`);
+        }
+        
+        function startStatusUpdates() {
+            // Update immediately
+            fetchSystemStatus();
+            
+            // Then set up interval
+            statusUpdateInterval = setInterval(fetchSystemStatus, 5000);
+        }
+        
+        function stopStatusUpdates() {
+            if (statusUpdateInterval) {
+                clearInterval(statusUpdateInterval);
+                statusUpdateInterval = null;
+            }
+        }
+        
+        function fetchSystemStatus() {
+            if (!isAuthenticated) return;
+            
+            fetch('/status', {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                // Update UI with system status
+                statusIndicator.className = 'status-indicator online';
+                connectionStatus.textContent = 'Connected';
+                batteryLevel.textContent = data.battery;
+                
+                // In a real app, you would fetch CPU temp from another endpoint
+                // For demo, we'll just show a random value
+                cpuTemp.textContent = Math.floor(Math.random() * 50) + 30;
+            })
+            .catch(error => {
+                console.error('Error fetching system status:', error);
+                statusIndicator.className = 'status-indicator offline';
+                connectionStatus.textContent = 'Disconnected';
+            });
+        }
+        
+        function startDetection() {
+            if (!isAuthenticated) return;
+            
+            fetch('/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to start detection');
+                alert('Detection started successfully');
+            })
+            .catch(error => {
+                console.error('Error starting detection:', error);
+                alert('Failed to start detection');
+            });
+        }
+        
+        function stopDetection() {
+            if (!isAuthenticated) return;
+            
+            fetch('/stop', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to stop detection');
+                alert('Detection stopped successfully');
+            })
+            .catch(error => {
+                console.error('Error stopping detection:', error);
+                alert('Failed to stop detection');
+            });
+        }
+        
+        function toggleVoiceAlerts() {
+            if (!isAuthenticated) return;
+            
+            const enabled = voiceAlertsCheckbox.checked;
+            
+            fetch('/voice_alert_toggle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify({ enabled })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to update voice alerts');
+            })
+            .catch(error => {
+                console.error('Error updating voice alerts:', error);
+                // Revert checkbox if failed
+                voiceAlertsCheckbox.checked = !enabled;
+            });
+        }
+        
+        function showVideoFeed() {
+            if (!isAuthenticated) return;
+            
+            videoFeed.style.display = 'block';
+            showVideoBtn.style.display = 'none';
+            hideVideoBtn.style.display = 'inline-block';
+            
+            // Start updating the video feed
+            videoFeedInterval = setInterval(() => {
+                videoFeed.src = '/video_feed?' + new Date().getTime();
+            }, 100);
+        }
+        
+        function hideVideoFeed() {
+            videoFeed.style.display = 'none';
+            showVideoBtn.style.display = 'inline-block';
+            hideVideoBtn.style.display = 'none';
+            
+            // Stop updating the video feed
+            if (videoFeedInterval) {
+                clearInterval(videoFeedInterval);
+                videoFeedInterval = null;
+            }
+        }
+        
+        function downloadLogs() {
+            if (!isAuthenticated) return;
+            
+            fetch('/download_logs', {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to download logs');
+                return response.blob();
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'smart_hat_logs.zip';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+            })
+            .catch(error => {
+                console.error('Error downloading logs:', error);
+                alert('Failed to download logs');
+            });
+        }
+        
+        function shutdownSystem() {
+            if (!isAuthenticated) return;
+            
+            if (!confirm('Are you sure you want to shutdown the Smart Hat system?')) {
+                return;
+            }
+            
+            fetch('/shutdown', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to shutdown system');
+                alert('Shutdown command sent. System will power off shortly.');
+            })
+            .catch(error => {
+                console.error('Error shutting down system:', error);
+                alert('Failed to send shutdown command');
+            });
+        }
+    </script>
+</body>
+</html>

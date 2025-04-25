@@ -1,11 +1,10 @@
 {
-  "name": "smart-hat-control-panel",
+  "name": "my-static-site",
   "version": "1.0.0",
-  "description": "Static frontend for Smart Hat system",
+  "description": "A simple HTML/CSS/JS static site",
   "scripts": {
     "start": "echo 'No server needed; this is a static site.'"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "author": "Your Name",
+  "license": "MIT"
 }
